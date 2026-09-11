@@ -1010,8 +1010,17 @@
     aiSendBtn.disabled = true;
 
     try {
+      // L'historique permet a l'IA de suivre un echange sur plusieurs tours
+      // (indispensable pour le sas d'entree de la review de call).
+      // On exclut le message courant (envoye dans `message`) et les messages d'erreur.
+      const history = aiHistories[currentTool]
+        .slice(0, -1)
+        .filter(m => m.role === 'user' || m.role === 'ai')
+        .slice(-20)
+        .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', text: m.text }));
+
       const { data, error } = await sbClient.functions.invoke('ai-tool', {
-        body: { tool_type: currentTool, message: text }
+        body: { tool_type: currentTool, message: text, history }
       });
       loadingDiv.remove();
       if(error){
